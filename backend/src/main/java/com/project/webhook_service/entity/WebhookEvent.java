@@ -23,10 +23,6 @@ public class WebhookEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Deterministic idempotency key: hash of (transactionId, partnerId, eventType).
-     * Prevents duplicate event ingestion.
-     */
     @Column(nullable = false, unique = true, length = 64)
     private String eventId;
 
@@ -59,10 +55,6 @@ public class WebhookEvent {
     @Column
     private Instant nextRetryAt;
 
-    /**
-     * Auto-incrementing per-partner sequence number for ordering.
-     * Assigned at ingestion time.
-     */
     @Column(nullable = false)
     private Long sequenceNumber;
 
@@ -71,6 +63,18 @@ public class WebhookEvent {
 
     @Column(nullable = false)
     private Instant updatedAt;
+
+
+
+
+
+
+
+
+
+
+
+
 
     @OneToMany(mappedBy = "webhookEvent", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("attemptNumber ASC")

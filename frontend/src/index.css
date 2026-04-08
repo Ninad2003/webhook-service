@@ -22,7 +22,6 @@ body {
   min-height: 100vh;
 }
 
-/* ============ LAYOUT ============ */
 .app-container {
   display: flex;
   flex-direction: column;
@@ -60,7 +59,6 @@ body {
   width: 100%;
 }
 
-/* ============ STATS BAR ============ */
 .stats-bar {
   display: flex;
   gap: 20px;
@@ -88,7 +86,6 @@ body {
   font-size: 0.85rem;
 }
 
-/* ============ FILTERS ============ */
 .filters-bar {
   background: #1a1a1a;
   border: 1px solid #333;
@@ -136,7 +133,6 @@ body {
   background-color: #242424;
 }
 
-/* ============ TABLE ============ */
 .table-container {
   background: #1a1a1a;
   border: 1px solid #333;
@@ -216,7 +212,6 @@ tbody tr:hover {
   border-color: #646cff;
 }
 
-/* ============ DETAIL PAGE ============ */
 .back-link {
   display: inline-block;
   margin-bottom: 15px;
@@ -267,10 +262,9 @@ tbody tr:hover {
   border-radius: 4px;
   overflow-x: auto;
   font-family: monospace;
-  color: #a6e22e; /* green-ish code tint */
+  color: #a6e22e;
 }
 
-/* ============ ATTEMPT TIMELINE ============ */
 .attempt-item {
   border: 1px solid #333;
   border-radius: 4px;

@@ -24,18 +24,15 @@ public class DeliveryAttempt {
     @Column(nullable = false)
     private int attemptNumber;
 
-    /** HTTP response status code. Null if the request failed before getting a response. */
     @Column
     private Integer statusCode;
 
     @Column(columnDefinition = "TEXT")
     private String responseBody;
 
-    /** Round-trip time in milliseconds. */
     @Column
     private Long responseTimeMs;
 
-    /** Error message if the request failed (connection timeout, DNS failure, etc.) */
     @Column(columnDefinition = "TEXT")
     private String error;
 

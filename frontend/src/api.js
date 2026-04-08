@@ -1,7 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const api = {
-  // Events
   async getEvents({ partnerId, status, eventType, page = 0, size = 20 } = {}) {
     const params = new URLSearchParams();
     if (partnerId) params.set('partnerId', partnerId);
@@ -21,7 +20,6 @@ export const api = {
     return res.json();
   },
 
-  // Partners
   async getPartners() {
     const res = await fetch(`${API_BASE}/api/partners`);
     if (!res.ok) throw new Error(`Failed to fetch partners: ${res.status}`);
@@ -38,7 +36,6 @@ export const api = {
     return res.json();
   },
 
-  // Ingest event (for testing from dashboard)
   async ingestEvent(data) {
     const res = await fetch(`${API_BASE}/api/events`, {
       method: 'POST',

@@ -22,6 +22,5 @@ public class EventIngestionRequest {
     @NotNull(message = "eventType is required")
     private String eventType;
 
-    /** Optional additional payload data. */
     private String payload;
 }

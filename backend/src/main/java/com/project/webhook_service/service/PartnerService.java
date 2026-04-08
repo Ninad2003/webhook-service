@@ -6,14 +6,12 @@ import com.project.webhook_service.entity.Partner;
 import com.project.webhook_service.exception.PartnerNotFoundException;
 import com.project.webhook_service.repository.PartnerRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PartnerService {
@@ -24,13 +22,11 @@ public class PartnerService {
     public PartnerResponse registerPartner(PartnerRegistrationRequest request) {
         Partner partner = partnerRepository.findByPartnerId(request.getPartnerId())
                 .map(existing -> {
-                    log.info("Updating webhook URL for partner: {}", request.getPartnerId());
                     existing.setWebhookUrl(request.getWebhookUrl());
                     existing.setActive(true);
                     return existing;
                 })
                 .orElseGet(() -> {
-                    log.info("Registering new partner: {}", request.getPartnerId());
                     return Partner.builder()
                             .partnerId(request.getPartnerId())
                             .webhookUrl(request.getWebhookUrl())

@@ -8,20 +8,16 @@ import com.project.webhook_service.entity.EventType;
 import com.project.webhook_service.entity.WebhookEvent;
 import com.project.webhook_service.exception.EventNotFoundException;
 import com.project.webhook_service.repository.WebhookEventRepository;
-import jakarta.persistence.criteria.Predicate;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventQueryService {
@@ -30,8 +26,27 @@ public class EventQueryService {
 
     @Transactional(readOnly = true)
     public Page<EventResponse> listEvents(String partnerId, String status, String eventType, Pageable pageable) {
-        Specification<WebhookEvent> spec = buildSpec(partnerId, status, eventType);
-        return webhookEventRepository.findAll(spec, pageable).map(this::toResponse);
+        
+        String filterPartnerId = (partnerId != null && !partnerId.isBlank()) ? partnerId : null;
+        
+        DeliveryStatus filterStatus = null;
+        if (status != null && !status.isBlank()) {
+            try {
+                filterStatus = DeliveryStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+            }
+        }
+        
+        EventType filterEventType = null;
+        if (eventType != null && !eventType.isBlank()) {
+            try {
+                filterEventType = EventType.valueOf(eventType.toUpperCase());
+            } catch (IllegalArgumentException e) {
+            }
+        }
+
+        return webhookEventRepository.findEventsWithFilters(filterPartnerId, filterStatus, filterEventType, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -39,35 +54,6 @@ public class EventQueryService {
         WebhookEvent event = webhookEventRepository.findById(id)
                 .orElseThrow(() -> new EventNotFoundException(id));
         return toDetailResponse(event);
-    }
-
-    private Specification<WebhookEvent> buildSpec(String partnerId, String status, String eventType) {
-        return (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (partnerId != null && !partnerId.isBlank()) {
-                predicates.add(cb.equal(root.get("partnerId"), partnerId));
-            }
-            if (status != null && !status.isBlank()) {
-                try {
-                    DeliveryStatus deliveryStatus = DeliveryStatus.valueOf(status.toUpperCase());
-                    predicates.add(cb.equal(root.get("status"), deliveryStatus));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid status filter: {}", status);
-                }
-            }
-            if (eventType != null && !eventType.isBlank()) {
-                try {
-                    EventType type = EventType.valueOf(eventType.toUpperCase());
-                    predicates.add(cb.equal(root.get("eventType"), type));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid eventType filter: {}", eventType);
-                }
-            }
-
-            query.orderBy(cb.desc(root.get("createdAt")));
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
     }
 
     private EventResponse toResponse(WebhookEvent event) {
