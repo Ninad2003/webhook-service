@@ -1,0 +1,60 @@
+services:
+  # ---- MySQL Database ----
+  mysql:
+    image: mysql:8.0
+    container_name: webhook-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: webhook_service
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - webhook-network
+
+  # ---- Spring Boot Backend ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: webhook-backend
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DB: webhook_service
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - webhook-network
+    restart: on-failure
+
+  # ---- React Dashboard ----
+  dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: webhook-dashboard
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - webhook-network
+
+volumes:
+  mysql_data:
+
+networks:
+  webhook-network:
+    driver: bridge
