@@ -36,10 +36,7 @@ public class DeliveryEngine {
     @Transactional
     public void recoverFromCrash() {
         try {
-            int reset = webhookEventRepository.resetStaleProcessingEvents(Instant.now());
-            if (reset > 0) {
-            } else {
-            }
+            webhookEventRepository.resetStaleProcessingEvents(Instant.now());
         } catch (Exception e) {
         }
     }
@@ -52,7 +49,6 @@ public class DeliveryEngine {
         if (partnerIds.isEmpty()) {
             return;
         }
-
 
         for (String partnerId : partnerIds) {
             webhookEventRepository.findNextDeliverableEvent(partnerId, now)

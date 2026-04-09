@@ -5,6 +5,11 @@ import { api } from '../api';
 const EVENT_TYPES = ['', 'KYC_REGISTERED', 'TXN_SCREENED', 'TXN_BLOCKED', 'TXN_RELEASED', 'INVALID_TXN'];
 const STATUSES = ['', 'PENDING', 'PROCESSING', 'DELIVERED', 'FAILED'];
 
+import StatsBar from '../components/StatsBar';
+import EventFilters from '../components/EventFilters';
+import EventTable from '../components/EventTable';
+import Pagination from '../components/Pagination';
+
 export default function EventList() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
@@ -90,86 +95,29 @@ export default function EventList() {
     <div>
       <h2>Webhook Events</h2>
       
-      <div className="stats-bar">
-        <div className="stat-card">
-          <h3>{stats.total}</h3>
-          <p>Total Events</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.pending}</h3>
-          <p>Pending</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.delivered}</h3>
-          <p>Delivered</p>
-        </div>
-        <div className="stat-card">
-          <h3>{stats.failed}</h3>
-          <p>Failed</p>
-        </div>
-      </div>
+      <StatsBar stats={stats} />
 
-      <div className="filters-bar">
-        <div className="filter-group">
-          <label>Partner</label>
-          <select className="filter-select" value={partnerId} onChange={(e) => { setPartnerId(e.target.value); setPage(0); }}>
-            <option value="">All</option>
-            {partners.map(p => <option key={p.partnerId}>{p.partnerId}</option>)}
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>Status</label>
-          <select className="filter-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
-            {STATUSES.map(s => <option key={s} value={s}>{s || 'All'}</option>)}
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>Event Type</label>
-          <select className="filter-select" value={eventType} onChange={(e) => { setEventType(e.target.value); setPage(0); }}>
-            {EVENT_TYPES.map(t => <option key={t} value={t}>{t || 'All'}</option>)}
-          </select>
-        </div>
-        <button className="btn-reset" onClick={resetFilters}>Reset</button>
-      </div>
+      <EventFilters 
+        partners={partners}
+        partnerId={partnerId} setPartnerId={setPartnerId}
+        status={status} setStatus={setStatus}
+        eventType={eventType} setEventType={setEventType}
+        setPage={setPage} resetFilters={resetFilters} 
+      />
 
       <div className="table-container">
-        {loading && events.length === 0 ? <p style={{padding: '20px'}}>Loading...</p> : 
-          <table>
-            <thead>
-              <tr>
-                <th>Event ID</th>
-                <th>Transaction ID</th>
-                <th>Partner</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Attempts</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map(event => (
-                <tr key={event.id} onClick={() => navigate(`/events/${event.id}`)}>
-                  <td>{event.eventId.substring(0, 10)}...</td>
-                  <td>{event.transactionId}</td>
-                  <td>{event.partnerId}</td>
-                  <td><span className="event-type-badge">{event.eventType}</span></td>
-                  <td><span className={`status-badge ${event.status.toLowerCase()}`}>{event.status}</span></td>
-                  <td>{event.attemptCount}/{event.maxAttempts}</td>
-                  <td>{new Date(event.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        }
+        <EventTable 
+          loading={loading} 
+          events={events} 
+          onRowClick={(id) => navigate(`/events/${id}`)} 
+        />
         
-        <div className="pagination">
-          <span>Showing {events.length} of {totalElements}</span>
-          <div>
-            <button className="pagination-btn" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Prev</button>
-            <span style={{margin: '0 10px'}}>Page {page + 1} of {Math.max(1, totalPages)}</span>
-            <button className="pagination-btn" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</button>
-          </div>
-        </div>
+        <Pagination 
+          eventsLength={events.length}
+          totalElements={totalElements}
+          page={page} setPage={setPage}
+          totalPages={totalPages}
+        />
       </div>
     </div>
   );
