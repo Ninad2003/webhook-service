@@ -2,6 +2,22 @@
 
 This document breaks down the design decisions, trade-offs, and architecture I went with to solve the Webhook Delivery Service challenge within the time constraints of the assessment.
 
+## High-Level Architecture
+
+```mermaid
+graph TD
+    A[Upstream Engine] -->|POST /api/events| B(EventController)
+    B --> C{Idempotency Check}
+    C -->|Duplicate| D[Ignore Event]
+    C -->|New Event| E[(Save Event to Database as PENDING)]
+    
+    F((Scheduled Delivery Engine)) --> G[Query nearest PENDING event per partner]
+    G --> H[Process & Deliver to Webhooks]
+    H --> I{HTTP Response}
+    I -->|Success 2xx| J[(Mark DELIVERED)]
+    I -->|Failure| K[(Calculate Backoff & Mark PENDING)]
+```
+
 ## 1. Data Model
 I kept the data model relational and simple, prioritizing data integrity by using MySQL as my single source of truth. 
 
@@ -15,16 +31,16 @@ I kept the data model relational and simple, prioritizing data integrity by usin
 ## 2. Idempotency & Validation
 If the upstream screening engine accidentally double-sends a transaction event, we shouldn't spam the partner. 
 
-To solve this, I generate an `eventId` using a deterministic SHA-256 hash of `transactionId + partnerId + eventType`. This is stored with a unique database constraint. If a duplicate comes in, it's immediately accepted but dropped internally without duplicating delivery.
+To solve this, I generate a deterministic `eventId` by concatenating the format `transactionId-partnerId-eventType`. This guarantees uniqueness and is stored with a unique database constraint. If a duplicate comes in, it's immediately accepted to satisfy the upstream engine, but ignored internally without duplicating delivery.
 
 *Extra Validation:* I also added strict state-machine validation on the API side. If the engine tries to submit a `TXN_RELEASED` event, my API immediately checks the database to ensure a `TXN_BLOCKED` event already existed previously for that exact transaction. If not, it safely rejects it.
 
 ## 3. Per-Partner Strict Ordering
 The requirement was strict: events for a specific partner must be delivered sequentially. Event 2 cannot arrive before Event 1.
 
-I solved this by assigning an incrementing `sequenceNumber` to every ingested event per partner. My async `@Scheduled` delivery engine runs on a fast repeating loop and queries the database for the *single oldest pending event* for each partner.
+I solved this by assigning an incrementing `sequenceNumber` to every ingested event per partner. My `@Scheduled` delivery engine runs on a fast repeating loop and queries the database for the *single oldest pending event* for each partner.
 
-Even though my engine utilizes a multi-threaded execution pool (so multiple partners process concurrently at high speeds), a single partner will always be processed perfectly sequentially based on that assigned number.
+To keep the system straightforward, simple, and easy to debug, the code relies on a procedural execution flow rather than complex thread pools. A single worker loops through all active partners with pending events, inherently guaranteeing perfect sequential delivery for each partner based on their assigned number.
 
 ## 4. Retry Strategy
 I implemented an exponential backoff strategy for reliability. 
